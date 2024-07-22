@@ -1,0 +1,62 @@
+<!DOCTYPE html><html lang="zh"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="给自己的学习成长留个记号"><title>理解linux inode | MaChao 's Void</title><link rel="stylesheet" type="text/css" href="/machao.github.io/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" mask="" sizes="any" href="/machao.github.io/favicon.ico"><link rel="Shortcut Icon" type="image/x-icon" href="/machao.github.io/favicon.ico"><link rel="apple-touch-icon" href="/machao.github.io/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/machao.github.io/apple-touch-icon.png"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">理解linux inode</h1><a id="logo" href="/machao.github.io/.">MaChao 's Void</a><p class="description">祝 生活健康，幸福快乐，世界和平 。</p></div><div id="nav-menu"><a class="current" href="/machao.github.io/."><i class="fa fa-home"> Home</i></a><a href="/machao.github.io/archives/"><i class="fa fa-archive"> Archive</i></a><a href="/machao.github.io/about/"><i class="fa fa-user"> About</i></a><a href="/machao.github.io/atom.xml"><i class="fa fa-rss"> RSS</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">理解linux inode</h1><div class="post-meta">2024-07-22</div><div class="post-content"><h3 id="理解linux-inode"><a href="#理解linux-inode" class="headerlink" title="理解linux inode"></a>理解linux inode</h3><p>linux中文件存储在磁盘上，文件内容划分为2部分进行存储：<code>文件元数据</code>、<code>文件内容数据</code>。</p>
+<p><code>文件元数据</code> 储存在 <code>inode table</code> 中，<code>文件内容数据</code>储存在磁盘的另一部分连续区域中。</p>
+<h4 id="文件系统"><a href="#文件系统" class="headerlink" title="文件系统"></a>文件系统</h4><p>文件系统创建（格式化）时，就把存储区域分为2个连续的储存区域。一个是  <code>inode table</code>， 一个是 <code>blocks(暂且这么命名吧)</code>。</p>
+<ol>
+<li><p><code>inode table</code> 是由 <code>inode</code> 组成的表，每一个 <code>inode</code> 对应一个文件系统中的文件或目录。</p>
+<ul>
+<li>每个 <code>inode</code> 默认大小是128字节（1KB）或256字节（2KB）。</li>
+<li><code>inode</code> 的个数在磁盘格式化时便已给定。在文件系统的典型实现中，所有inode占文件系统储存的1%左右。</li>
+</ul>
+</li>
+<li><p><code>blocks</code>：是磁盘的另一端连续的空间，用于存储文件的内容。</p>
+<ul>
+<li>操作系统在读取磁盘时，通常是一次性读取一个”块”（<code>block</code>）。</li>
+<li>一个”块”通常是4k大小，由8个扇区组成，每个扇区大小为512字节。<br><img src="https://upload-images.jianshu.io/upload_images/19950097-fcb4a3cd53d88686.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240#pic_center=400*400" alt="操作系统中扇区的概念来源"></li>
+</ul>
+</li>
+</ol>
+<p><em>inode分配完了怎么办？</em></p>
+<blockquote>
+<p>由于文件系统中每个 <code>文件数据对象</code> 都必须要有一个 <code>inode</code> ，因此当 <code>inode table</code> 用光后，即使磁盘未满也无法在磁盘上创建文件了。</p>
+</blockquote>
+<p><em>“目录文件” 概念</em></p>
+<blockquote>
+<p>实际上在文件系统中，file和dir都属于一种“目录文件”。</p>
+<ul>
+<li>“目录文件”的结构是一个“目录项”列表。</li>
+<li>每个“目录项”由2部分组成：<code>file/dir的名称</code> + <code>file/dir的inode</code>。</li>
+<li>所以创建一个“目录文件”时，实际做了3件事：在其“父目录文件”中增加一个条目；分配一个inode；再分配一个存储块，用来保存当前被创建目录包含的文件与子目录。</li>
+</ul>
+</blockquote>
+<p><em>文件系统创建一个 file 时做了哪些动作？</em></p>
+<blockquote>
+<p>文件系统创建一个file时：</p>
+<ul>
+<li>在其“父目录文件”的列表中增加一个“目录项”</li>
+<li>“目录项”的inode类别为“文件”</li>
+</ul>
+</blockquote>
+<p><em>文件系统创建一个 dir 时做了哪些动作？</em></p>
+<blockquote>
+<p>文件系统创建一个dir时：</p>
+<ul>
+<li>在其“父目录文件”的列表中增加一个“目录项”</li>
+<li>“目录项”的inode类别为“目录”</li>
+</ul>
+</blockquote>
+<p><em>文件系统 通过文件名打开文件 时做了哪些动作？</em></p>
+<blockquote>
+<ul>
+<li>首先，操作系统找到这个文件名对应的inode号码</li>
+<li>其次，通过inode号码，获取inode信息</li>
+<li>最后，根据inode信息，找到文件数据所在的block，读出数据</li>
+</ul>
+</blockquote>
+<h4 id="inode细节"><a href="#inode细节" class="headerlink" title="inode细节"></a>inode细节</h4><p><code>inode</code> 储存了 <code>文件数据对象</code> 的元数据，包括：所有者、访问权限（读、写、执行）、类型（是文件还是目录）、内容修改时间、inode修改时间、上次访问时间、对应的文件系统存储块的地址，等等。</p>
+<p>当已知 <code>文件数据对象</code> 的 <code>inode</code>，操作系统便能通过 <code>inode</code> 里面的元数据查出 <code>文件内容数据</code> 的存储地址。</p>
+<p>操作系统实际上并不关心 <code>文件数据对象</code> 的文件名与目录名，一个 <code>文件数据对象</code> 可以有多个别名，操作系统允许通过 硬链接 和 软链接 的方式为 <code>文件数据对象</code> 创建别名。</p>
+<figure class="highlight plaintext"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line"># 硬链接</span><br><span class="line">ln &lt;source_file&gt; &lt;target_file&gt;</span><br><span class="line"># 指向的是 目标文件的inode</span><br><span class="line"></span><br><span class="line"># 软链接</span><br><span class="line">ln -s &lt;src_file/src_dir&gt; &lt;target_file/target_dir&gt;</span><br><span class="line"># 指向的是 目标文件的文件名</span><br></pre></td></tr></table></figure>
+
+
+<h5 id="参考"><a href="#参考" class="headerlink" title="参考"></a>参考</h5><p><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/Inode">wikipedia</a><br><a target="_blank" rel="noopener" href="https://www.ruanyifeng.com/blog/2011/12/inode.html">理解inode</a></p>
+</div><div class="tags"><ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/machao.github.io/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86/" rel="tag">计算机基本原理</a></li></ul></div><div class="post-nav"><a class="next" href="/machao.github.io/2024/07/22/2024%E5%B9%B4%E4%B8%AD%E6%80%BB%E7%BB%93/">2024 年中总结</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="https://codmac.github.io/machao.github.io"/></form></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="About"><img class="nofancybox" src="/img/avatar.png"/></a><p>To be a better man.</p><a class="info-icon" href="https://twitter.com/username" title="Twitter" target="_blank" style="margin-inline:5px"> <i class="fa fa-twitter-square" style="margin-inline:5px"></i></a><a class="info-icon" href="mailto:admin@domain.com" title="Email" target="_blank" style="margin-inline:5px"> <i class="fa fa-envelope-square" style="margin-inline:5px"></i></a><a class="info-icon" href="https://github.com/username" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a><a class="info-icon" href="/atom.xml" title="RSS" target="_blank" style="margin-inline:5px"> <i class="fa fa-rss-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> Categories</i></div></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> Tags</i></div><div class="tagcloud"><a href="/machao.github.io/tags/%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/" style="font-size: 15px;">年度总结</a> <a href="/machao.github.io/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86/" style="font-size: 15px;">计算机基本原理</a> <a href="/machao.github.io/tags/%E6%9D%82/" style="font-size: 15px;">杂</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> Recent</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/machao.github.io/2024/07/22/%E7%90%86%E8%A7%A3linux-inode-md/">理解linux inode</a></li><li class="post-list-item"><a class="post-list-link" href="/machao.github.io/2024/07/22/2024%E5%B9%B4%E4%B8%AD%E6%80%BB%E7%BB%93/">2024 年中总结</a></li><li class="post-list-item"><a class="post-list-link" href="/machao.github.io/2024/07/21/HelloWorld/">HelloWorld</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> Links</i></div><ul></ul><a href="https://www.processon.com/u/5add870be4b02dfcf9be8372" title="processOn" target="_blank">processOn</a><ul></ul><a href="https://www.jianshu.com/u/85611a80d4d0" title="jianshu" target="_blank">jianshu</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2024 <a href="/machao.github.io/." rel="nofollow">MaChao 's Void.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/machao.github.io/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/machao.github.io/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><script type="text/javascript" src="/machao.github.io/js/copycode.js?v=1.0.0" successtext="Copy Successed!"></script><link rel="stylesheet" type="text/css" href="/machao.github.io/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/machao.github.io/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/machao.github.io/js/smartresize.js?v=1.0.0"></script></div></body></html>
