@@ -1,0 +1,87 @@
+<!DOCTYPE html><html lang="zh"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="给自己的学习成长留个记号"><title>CPU是如何执行程序的？ | MaChao 's Void</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" mask="" sizes="any" href="/favicon.ico"><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">CPU是如何执行程序的？</h1><a id="logo" href="/.">MaChao 's Void</a><p class="description">祝 生活健康，幸福快乐，世界和平 。</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> Start</i></a><a href="/archives/"><i class="fa fa-archive"> Archiv</i></a><a href="/about/"><i class="fa fa-user"> Über</i></a><a href="/atom.xml"><i class="fa fa-rss"> RSS</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">CPU是如何执行程序的？</h1><div class="post-meta">2024-07-23</div><div class="post-content"><h3 id="冯诺依曼模型"><a href="#冯诺依曼模型" class="headerlink" title="冯诺依曼模型"></a>冯诺依曼模型</h3><p>根据 <code>冯诺依曼模型</code> 的定义，最简单的计算机基本结构由5部分组成：<code>控制器</code>、<code>运算器</code>、<code>存储器</code>、<code>输入</code>、<code>输出</code>。</p>
+<p>在现代计算机中，<code>控制器</code>和<code>运算器</code>都是内嵌在CPU中，而<code>存储器</code>通常指的是内存，<code>输入</code>和<code>输出</code>则通常指的是键盘和显示器。</p>
+<ul>
+<li><h5 id="CPU有哪些组件？"><a href="#CPU有哪些组件？" class="headerlink" title="CPU有哪些组件？"></a>CPU有哪些组件？</h5><blockquote>
+<p>CPU通常由<code>控制单元</code>、<code>逻辑运算单元</code>、<code>寄存器</code>组成。</p>
+<ul>
+<li><code>控制单元</code>：负责根据指令控制CPU工作，例如从内存中读取数据到寄存器，将寄存器中的两个数据进行加和运算等。</li>
+<li><code>逻辑运算单元</code>：负责计算</li>
+<li><code>寄存器</code>：包括 <code>通用寄存器</code>、<code>程序计数器</code>、<code>指令寄存器</code><ol>
+<li><code>通用寄存器</code>：用于存放需要运算的数据</li>
+<li><code>程序计数器</code>：用于存储下一个要执行指令的内存地址</li>
+<li><code>指令寄存器</code>：用于存放正在执行的指令</li>
+</ol>
+</li>
+</ul>
+</blockquote>
+</li>
+<li><h5 id="明明有了内存为什么CPU还需要寄存器？"><a href="#明明有了内存为什么CPU还需要寄存器？" class="headerlink" title="明明有了内存为什么CPU还需要寄存器？"></a>明明有了内存为什么CPU还需要寄存器？</h5><blockquote>
+<p>因为CPU 从内存中读取数据的速度 与 直接从寄存器中读取数据的速度 差异是很大的！这是效率和造价等权衡下的层次化设计。</p>
+</blockquote>
+</li>
+<li><h5 id="内存扮演什么角色？"><a href="#内存扮演什么角色？" class="headerlink" title="内存扮演什么角色？"></a>内存扮演什么角色？</h5><blockquote>
+<p>在程序运行时，我们的 “程序本身” 和 “程序数据” 都是存储在 <code>内存</code> 中，这是一段连续的线性区域。<br>一个基本的内存存储单位为 <code>1字节(8bit)</code>, 每一个字节对应一个内存地址。</p>
+</blockquote>
+</li>
+<li><h5 id="总线扮演什么角色？"><a href="#总线扮演什么角色？" class="headerlink" title="总线扮演什么角色？"></a>总线扮演什么角色？</h5><blockquote>
+<p>总线是将 <code>CPU</code>、<code>内存</code>、以及其他设备关联起来，负责他们之间的通信，总线可分为 3 种：<code>地址总线</code>、<code>数据总线</code>、<code>控制总线</code></p>
+<ul>
+<li><code>地址总线</code>，用于指定 CPU 将要操作的内存地址</li>
+<li><code>数据总线</code>，用于读写内存的数据</li>
+<li><code>控制总线</code>，用于发送和接收信号，比如中断、设备复位等信号，CPU 收到信号后自然进行响应，这时也需要控制总线</li>
+</ul>
+<p><img src="https://cdn.xiaolincoding.com/gh/xiaolincoder/ImageHost2/%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F/%E7%A8%8B%E5%BA%8F%E6%89%A7%E8%A1%8C/%E5%86%AF%E8%AF%BA%E4%BE%9D%E6%9B%BC%E6%A8%A1%E5%9E%8B.png"></p>
+<p>当 CPU 要读写内存数据的时：</p>
+<ul>
+<li>首先要通过「地址总线」来指定内存的地址</li>
+<li>然后通过「控制总线」控制是读或写命令</li>
+<li>最后通过「数据总线」来传输数据</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h3 id="线路位宽-和-CPU位宽"><a href="#线路位宽-和-CPU位宽" class="headerlink" title="线路位宽 和 CPU位宽"></a>线路位宽 和 CPU位宽</h3><ul>
+<li><h5 id="数据是如何通过线路传输的呢？线路位宽对效率有哪些影响？"><a href="#数据是如何通过线路传输的呢？线路位宽对效率有哪些影响？" class="headerlink" title="数据是如何通过线路传输的呢？线路位宽对效率有哪些影响？"></a>数据是如何通过线路传输的呢？线路位宽对效率有哪些影响？</h5><blockquote>
+<p>其实是通过操作电压，低电压表示 0，高压电压则表示 1。<br>如果构造了”高低高”这样的信号，对应的二进制数据就是”101” ，十进制则表示”5”。</p>
+<p>如果只有一条线路，那么二进制数据”101”的需要传输3次，这样的效率通常是不可接受的。<br>那怎么办呢？只要多条线路一起传输就好！</p>
+<p>32位CPU 的[数据总线]位宽通常是 <code>32条</code>，意味着一次性能从内存读取 <code>4字节</code> 的数据。<br>32位CPU 的[地址总线]位宽通常是 <code>32条</code> 或 <code>36条</code>, 意味着cpu最大的内存寻址能力是 <code>2^32=4G</code> 或 <code>2^40</code></p>
+</blockquote>
+</li>
+<li><h5 id="CPU通常有-32位-和-64位-它们的差异是啥？"><a href="#CPU通常有-32位-和-64位-它们的差异是啥？" class="headerlink" title="CPU通常有 32位 和 64位, 它们的差异是啥？"></a>CPU通常有 <code>32位</code> 和 <code>64位</code>, 它们的差异是啥？</h5><blockquote>
+<p>这里的位指的是”位宽”, 即CPU一次运算能计算的数据量。</p>
+<p>这里以32位CPU为例，32位CPU一次能计算4字节，能计算的最大整数 &#x3D; <code>2^32 - 1</code> &#x3D; <code>4294967295</code></p>
+<p>当然，这并不意味着32位计算机只能进行小于<code>4294967295</code>的计算!<br>例如使用32位CPU进行加和2个64位大小的数字，CPU会先把原数字拆为高位低位2个数字，先进行低位数字加和，算出进位，然后再进行高位数字加和，再加上低位数字加和的进位，最后拼接得到结果。</p>
+</blockquote>
+</li>
+</ul>
+<h3 id="程序执行的基本过程"><a href="#程序执行的基本过程" class="headerlink" title="程序执行的基本过程"></a>程序执行的基本过程</h3><p>程序实际上是一条一条指令，所以程序的运行过程就是把每一条指令一步一步的执行起来，负责执行指令的就是 CPU 了。</p>
+<ul>
+<li><h5 id="CPU-执行程序是怎么样的？"><a href="#CPU-执行程序是怎么样的？" class="headerlink" title="CPU 执行程序是怎么样的？"></a>CPU 执行程序是怎么样的？</h5><blockquote>
+<p>CPU 执行程序的过程如下：</p>
+<ol>
+<li>第一步:<ul>
+<li>CPU读取 <code>[程序计数器]</code> 的值, 这里的值是下一个指令的内存地址。</li>
+<li>CPU的 <code>[控制单元]</code> 操作 <code>[地址总线]</code> 指定需要访问的内存，并通知内存设备准备数据</li>
+<li>数据准备好后通过 <code>[数据总线]</code> 将指令数据传给 CPU</li>
+<li>CPU 收到内存传来的数据后，将这个指令数据存入到 <code>[指令寄存器]</code></li>
+</ul>
+</li>
+<li>第二步：<ul>
+<li><code>[程序计数器]</code> 的值自增，表示指向下一条指令。这个自增的大小，由 CPU 的位宽决定，比如 32 位的 CPU，指令是 4 个字节，需要 4 个内存地址存放，因此「程序计数器」的值会自增 4；</li>
+</ul>
+</li>
+<li>第三步:<ul>
+<li>CPU 分析 <code>[指令寄存器]</code> 中的指令，确定指令的类型和参数</li>
+<li>如果是计算类型的指令，就把指令交给 <code>[逻辑运算单元]</code> 运算</li>
+<li>如果是存储类型的指令，则交由 <code>[控制单元]</code> 执行</li>
+</ul>
+</li>
+</ol>
+<p>简单总结一下就是，一个程序执行的时候，CPU 会根据程序计数器里的内存地址，从内存里面把需要执行的指令读取到指令寄存器里面执行，然后根据指令长度自增，开始顺序读取下一条指令。</p>
+<p>CPU 从程序计数器读取指令、到执行、再到下一条指令，这个过程会不断循环，直到程序执行结束，这个不断循环的过程被称为 CPU 的指令周期。</p>
+</blockquote>
+</li>
+</ul>
+<hr>
+<p>参考：<a target="_blank" rel="noopener" href="https://xiaolincoding.com/os/1_hardware/how_cpu_run.html"> CPU 是如何执行程序的？</a></p>
+</div><div class="tags"></div><div class="post-nav"><a class="next" href="/2024/07/22/%E7%90%86%E8%A7%A3linux-inode/">理解linux inode</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="https://codmac.github.io"/></form></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="Über"><img class="nofancybox" src="/img/avatar.png"/></a><p>To be a better man.</p><a class="info-icon" href="https://twitter.com/username" title="Twitter" target="_blank" style="margin-inline:5px"> <i class="fa fa-twitter-square" style="margin-inline:5px"></i></a><a class="info-icon" href="mailto:admin@domain.com" title="Email" target="_blank" style="margin-inline:5px"> <i class="fa fa-envelope-square" style="margin-inline:5px"></i></a><a class="info-icon" href="https://github.com/username" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a><a class="info-icon" href="/atom.xml" title="RSS" target="_blank" style="margin-inline:5px"> <i class="fa fa-rss-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> Kategorien</i></div></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> Tags</i></div><div class="tagcloud"><a href="/tags/%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/" style="font-size: 15px;">年度总结</a> <a href="/tags/%E6%9D%82/" style="font-size: 15px;">杂</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86/" style="font-size: 15px;">计算机基本原理</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> Letzte</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/07/23/CPU%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%A8%8B%E5%BA%8F%E7%9A%84%EF%BC%9F/">CPU是如何执行程序的？</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/22/%E7%90%86%E8%A7%A3linux-inode/">理解linux inode</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/22/2024%E5%B9%B4%E4%B8%AD%E6%80%BB%E7%BB%93/">2024 年中总结</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/21/HelloWorld/">HelloWorld</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> Blogroll</i></div><ul></ul><a href="https://www.processon.com/u/5add870be4b02dfcf9be8372" title="processOn" target="_blank">processOn</a><ul></ul><a href="https://www.jianshu.com/u/85611a80d4d0" title="jianshu" target="_blank">jianshu</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2024 <a href="/." rel="nofollow">MaChao 's Void.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="Copy Successed!"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>
