@@ -1,0 +1,60 @@
+<!DOCTYPE html><html lang="zh"><head><meta http-equiv="content-type" content="text/html; charset=utf-8"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="description" content="给自己的学习成长留个记号"><title>CPU怎么保证缓存一致性？ | MaChao 's Void</title><link rel="stylesheet" type="text/css" href="/css/style.css?v=1.0.0"><link rel="stylesheet" type="text/css" href="https://unpkg.com/normalize.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/pure-min.css"><link rel="stylesheet" type="text/css" href="https://unpkg.com/purecss/build/grids-responsive-min.css"><link rel="stylesheet" href="https://unpkg.com/font-awesome@4.7.0/css/font-awesome.min.css"><script type="text/javascript" src="https://unpkg.com/jquery/dist/jquery.min.js"></script><link rel="icon" mask="" sizes="any" href="/favicon.ico"><link rel="Shortcut Icon" type="image/x-icon" href="/favicon.ico"><link rel="apple-touch-icon" href="/apple-touch-icon.png"><link rel="apple-touch-icon-precomposed" href="/apple-touch-icon.png"><script type="text/javascript" src="https://unpkg.com/clipboard/dist/clipboard.min.js"></script><script type="text/javascript" src="https://unpkg.com/toastr/build/toastr.min.js"></script><link rel="stylesheet" href="https://unpkg.com/toastr/build/toastr.min.css"><meta name="generator" content="Hexo 7.3.0"></head><body><div class="body_container"><div id="header"><div class="site-name"><h1 class="hidden">CPU怎么保证缓存一致性？</h1><a id="logo" href="/.">MaChao 's Void</a><p class="description">祝 生活健康，幸福快乐，世界和平 。</p></div><div id="nav-menu"><a class="current" href="/."><i class="fa fa-home"> Start</i></a><a href="/archives/"><i class="fa fa-archive"> Archiv</i></a></div></div><div class="pure-g" id="layout"><div class="pure-u-1 pure-u-md-3-4"><div class="content_container"><div class="post"><h1 class="post-title">CPU怎么保证缓存一致性？</h1><div class="post-meta">2024-07-25<span> | </span><span class="category"><a href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86/">计算机基本原理</a></span></div><div class="post-content"><h3 id="CPU缓存一致性"><a href="#CPU缓存一致性" class="headerlink" title="CPU缓存一致性"></a>CPU缓存一致性</h3><p>通常情况下，CPU单个时钟周期可以执行 <code>3~9</code> 个指令，CPU一次访问内存需要 <code>200~300</code> 个时钟周期。于是CPU引入了 <code>CPU Cache</code> 帮助CPU减少直接访问内存的次数，从而大大加速程序的执行速度。</p>
+<p>但是CPU除了读数据外，还有写数据，这种情况下怎么保持 <code>CPU Cache</code> 与 内存 的数据一致性呢？我们由浅入深，先从单CPU模型开始分析。</p>
+<hr>
+<h4 id="写直达-和-写回"><a href="#写直达-和-写回" class="headerlink" title="写直达 和 写回"></a><code>写直达</code> 和 <code>写回</code></h4><p>单CPU情况下，以下2种方法都可以解决一致性问题：</p>
+<ul>
+<li><p><code>write-through(写直达)</code><br>这是保持 内存 与 <code>CPU Cache</code> 一致性最简单直接的方式，当发生”写操作”时，同时把数据写入 内存 和 <code>CPU Cache</code>。</p>
+<p>不过弊端明显，无论数据是否在缓存中，都会往内存中写，这对性能来说是不可接受的。</p>
+</li>
+<li><p><code>write-back(写回)</code><br>写回机制中，当发生”写操作”时:</p>
+<ol>
+<li>CPU先判断数据是否已在 <code>CPU Cache</code> 中</li>
+<li>exist -&gt; 标记dirty</li>
+<li>no exist -&gt; (仅当标记dirty)被替换的 <code>Cache Line</code> 对应数据写回内存 -&gt; 新数据写入 <code>CPU Cache</code> 中</li>
+</ol>
+</li>
+</ul>
+<hr>
+<h4 id="MESI协议"><a href="#MESI协议" class="headerlink" title="MESI协议"></a><code>MESI协议</code></h4><p>目前计算机CPU都是多核的，由于 <code>CPU Cache</code> 的 <code>L1</code>，<code>L2</code> 都是各个CPU核心独占的，因此CPU内会存在多份数据缓存副本，这种情况下单纯的 <code>write-through</code> 和 <code>write-back</code> 方案明显无法保证数据的一致性。</p>
+<p>于是大多数CPU实现都使用了 <code>MESI协议</code> , 这是一个基于失效的缓存一致性协议，是支持写回（write-back）缓存的最常用协议。</p>
+<p><code>MESI协议</code> 中，<code>Cache Line</code> 具有 <code>M</code>, <code>E</code>, <code>S</code>, <code>I</code> 4种状态，CPU读写 <code>CPU Cache</code> 时，根据 <code>Cache Line</code> 的状态变化进行一些列的信号操作，保证缓存一致性。</p>
+<p>状态说明：</p>
+<ul>
+<li><code>M</code> (Modified 已修改)</li>
+<li><code>E</code> (Exclusive 独占)</li>
+<li><code>S</code> (Shared 共享)</li>
+<li><code>I</code> (Invalid 无效)</li>
+</ul>
+<p>核心规则：  </p>
+<ol>
+<li>当 <code>Cache Line</code> 状态是 <code>M</code> 时， 说明缓存副本是脏的。</li>
+<li>当 <code>Cache Line</code> 状态是 <code>E</code> 时， 说明缓存副本只存在一个CPU核心中。</li>
+<li>当 <code>Cache Line</code> 状态是 <code>S</code> 时， 说明缓存副本存在于多个CPU核心中。</li>
+<li>当 <code>Cache Line</code> 状态由 <code>M</code> 降级( <code>S</code> &#x2F; <code>I</code> )时，必然会触发数据先回写到内存。</li>
+<li>当 <code>Cache Line</code> 状态由 <code>S</code> 升级( <code>M</code> )时，必然会将其他 <code>Cache Line</code> 状态置为 <code>I</code>。</li>
+<li>当 <code>Cache Line</code> 的数据总是优先从其他有效的 <code>Cache Line</code> 中复制，然后再是从内存复制。</li>
+</ol>
+<p>状态变化详细场景 (数据传输以红色绘制，而降级和无效流量以蓝色绘制)：</p>
+<ul>
+<li><p>如果线程读取任何缓存中都不存在的数据，它将以独占状态 (E) 将该行提取到其缓存中：<br><img src="https://upload-images.jianshu.io/upload_images/19950097-1ddf1352f6da5bec.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+</li>
+<li><p>如果一个线程从另一个线程的缓存中处于共享状态 (S) 的缓存行读取数据，它会将该缓存行提取到处于共享状态 (S) 的缓存中：<br><img src="https://upload-images.jianshu.io/upload_images/19950097-fe80dfa4f48583b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+</li>
+<li><p>如果一个线程从另一个线程的缓存中处于独占状态 (E) 的缓存行读取数据，它会将该缓存行提取到其处于共享状态 (S) 的缓存中，并将另一个缓存中的缓存行降级为共享状态 (S)：<br> <img src="https://upload-images.jianshu.io/upload_images/19950097-8ffbd69ce2fee686.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+</li>
+<li><p>如果一个线程从另一个线程的缓存中处于修改状态 (M) 的缓存行读取数据，则另一个缓存必须先写回其修改后的缓存行版本并将其降级为共享状态 (S)。然后，执行读取的线程可以将缓存行添加到其处于共享状态 (S) 的缓存中：<br><img src="https://upload-images.jianshu.io/upload_images/19950097-52435d6f4758f35b.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+</li>
+<li><p>当线程拥有处于独占 (E) 或已修改状态 (M) 的缓存行时，它可以以非常低的开销写入该缓存行，因为它知道没有其他线程可以拥有需要使之无效的缓存行的副本。写入独占缓存行会使其处于已修改状态 (M)：<br><img src="https://upload-images.jianshu.io/upload_images/19950097-e3961f1c7a4db8fe.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+</li>
+<li><p>当线程写入处于共享状态 (S) 的缓存行时，它必须将该行升级为已修改状态 (M)。为了做到这一点，它必须使其他缓存中该行的任何副本无效 (I)，以便它们不会保留过时的副本：<br> <img src="https://upload-images.jianshu.io/upload_images/19950097-9fdba343fd52e3f4.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+</li>
+<li><p>当线程向其缓存中不存在的缓存行写入数据时，它必须获取该行并在所有其他缓存中使其无效 (I)。如果另一个线程有该缓存行的修改副本 (M)，则必须先将其写回，然后执行写入的线程才能获取它。<br><img src="https://upload-images.jianshu.io/upload_images/19950097-74532db089e65338.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+</li>
+</ul>
+<hr>
+<p>参考：  </p>
+<ul>
+<li><a target="_blank" rel="noopener" href="https://www.nic.uoregon.edu/~khuck/ts/acumem-report/manual_html/ch_intro_coherence.html">多线程和缓存一致性</a></li>
+<li><a target="_blank" rel="noopener" href="https://zh.wikipedia.org/wiki/MESI%E5%8D%8F%E8%AE%AE">wikipedia&#x2F;MESI协议</a></li>
+</ul>
+</div><div class="tags"><ul class="article-tag-list" itemprop="keywords"><li class="article-tag-list-item"><a class="article-tag-list-link" href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86/" rel="tag">计算机基本原理</a></li></ul></div><div class="post-nav"><a class="next" href="/2024/07/25/%E4%BB%80%E4%B9%88%E6%A0%B7%E7%9A%84%E4%BB%A3%E7%A0%81%E8%83%BD%E8%AE%A9CPU%E8%BF%90%E8%A1%8C%E7%9A%84%E6%9B%B4%E5%BF%AB%EF%BC%9F/">什么样的代码能让CPU运行的更快？</a></div></div></div></div><div class="pure-u-1-4 hidden_mid_and_down"><div id="sidebar"><div class="widget"><form class="search-form" action="//www.google.com/search" method="get" accept-charset="utf-8" target="_blank"><input type="text" name="q" maxlength="20" placeholder="Search"/><input type="hidden" name="sitesearch" value="https://codmac.github.io"/></form></div><div class="widget"><div class="author-info"><a class="info-avatar" href="/about/" title="Über"><img class="nofancybox" src="/img/avatar.png"/></a><p>To be a better man.</p><a class="info-icon" href="https://twitter.com/CodMac" title="Twitter" target="_blank" style="margin-inline:5px"> <i class="fa fa-twitter-square" style="margin-inline:5px"></i></a><a class="info-icon" href="ma_chao163@163.com" title="Email" target="_blank" style="margin-inline:5px"> <i class="fa fa-envelope-square" style="margin-inline:5px"></i></a><a class="info-icon" href="https://github.com/CodMac" title="Github" target="_blank" style="margin-inline:5px"> <i class="fa fa-github-square" style="margin-inline:5px"></i></a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-folder-o"> Kategorien</i></div><ul class="category-list"><li class="category-list-item"><a class="category-list-link" href="/categories/%E4%BA%91%E5%8E%9F%E7%94%9F/">云原生</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/">年度总结</a></li><li class="category-list-item"><a class="category-list-link" href="/categories/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86/">计算机基本原理</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-star-o"> Tags</i></div><div class="tagcloud"><a href="/tags/%E5%B9%B4%E5%BA%A6%E6%80%BB%E7%BB%93/" style="font-size: 15px;">年度总结</a> <a href="/tags/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%9F%BA%E6%9C%AC%E5%8E%9F%E7%90%86/" style="font-size: 15px;">计算机基本原理</a> <a href="/tags/%E6%9D%82/" style="font-size: 15px;">杂</a> <a href="/tags/%E4%BA%91%E5%8E%9F%E7%94%9F/" style="font-size: 15px;">云原生</a></div></div><div class="widget"><div class="widget-title"><i class="fa fa-file-o"> Letzte</i></div><ul class="post-list"><li class="post-list-item"><a class="post-list-link" href="/2024/07/25/CPU%E6%80%8E%E4%B9%88%E4%BF%9D%E8%AF%81%E7%BC%93%E5%AD%98%E4%B8%80%E8%87%B4%E6%80%A7%EF%BC%9F/">CPU怎么保证缓存一致性？</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/25/%E4%BB%80%E4%B9%88%E6%A0%B7%E7%9A%84%E4%BB%A3%E7%A0%81%E8%83%BD%E8%AE%A9CPU%E8%BF%90%E8%A1%8C%E7%9A%84%E6%9B%B4%E5%BF%AB%EF%BC%9F/">什么样的代码能让CPU运行的更快？</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/23/%E8%AE%A1%E7%AE%97%E6%9C%BA%E5%AD%98%E5%82%A8%E7%9A%84%E5%B1%82%E6%AC%A1%E7%BB%93%E6%9E%84/">计算机存储的层次结构</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/23/helm%E5%AE%89%E8%A3%85Nacos/">helm安装Nacos</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/23/CPU%E6%98%AF%E5%A6%82%E4%BD%95%E6%89%A7%E8%A1%8C%E7%A8%8B%E5%BA%8F%E7%9A%84%EF%BC%9F/">CPU是如何执行程序的？</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/22/%E7%90%86%E8%A7%A3linux-inode/">理解linux inode</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/22/2024%E5%B9%B4%E4%B8%AD%E6%80%BB%E7%BB%93/">2024 年中总结</a></li><li class="post-list-item"><a class="post-list-link" href="/2024/07/21/HelloWorld/">HelloWorld</a></li></ul></div><div class="widget"><div class="widget-title"><i class="fa fa-external-link"> Blogroll</i></div><ul></ul><a href="https://www.processon.com/u/5add870be4b02dfcf9be8372" title="processOn" target="_blank">processOn</a><ul></ul><a href="https://www.jianshu.com/u/85611a80d4d0" title="jianshu" target="_blank">jianshu</a></div></div></div><div class="pure-u-1 pure-u-md-3-4"><div id="footer">Copyright © 2024 <a href="/." rel="nofollow">MaChao 's Void.</a> Powered by<a rel="nofollow" target="_blank" href="https://hexo.io"> Hexo.</a><a rel="nofollow" target="_blank" href="https://github.com/tufu9441/maupassant-hexo"> Theme</a> by<a rel="nofollow" target="_blank" href="https://github.com/pagecho"> Cho.</a></div></div></div><a class="show" id="rocket" href="#top"></a><script type="text/javascript" src="/js/totop.js?v=1.0.0" async></script><script type="text/javascript" src="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.js" async></script><script type="text/javascript" src="/js/fancybox.js?v=1.0.0" async></script><link rel="stylesheet" type="text/css" href="https://unpkg.com/@fancyapps/fancybox/dist/jquery.fancybox.min.css"><script type="text/javascript" src="/js/copycode.js?v=1.0.0" successtext="Copy Successed!"></script><link rel="stylesheet" type="text/css" href="/css/copycode.css?v=1.0.0"><script type="text/javascript" src="/js/codeblock-resizer.js?v=1.0.0"></script><script type="text/javascript" src="/js/smartresize.js?v=1.0.0"></script></div></body></html>
