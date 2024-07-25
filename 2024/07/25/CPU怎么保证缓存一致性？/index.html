@@ -36,7 +36,7 @@
 </ol>
 <p>状态变化详细场景 (数据传输以红色绘制，而降级和无效流量以蓝色绘制)：</p>
 <ul>
-<li><p>如果线程读取任何缓存中都不存在的数据，它将以独占状态 (E) 将该行提取到其缓存中：<br><img src="https://upload-images.jianshu.io/upload_images/19950097-1ddf1352f6da5bec.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
+<li><p>如果线程读取任何缓存中都不存在的数据，它将以独占状态 (E) 将该行提取到其缓存中：<br><img src="https://upload-images.jianshu.io/upload_images/19950097-1ddf1352f6da5bec.png"></p>
 </li>
 <li><p>如果一个线程从另一个线程的缓存中处于共享状态 (S) 的缓存行读取数据，它会将该缓存行提取到处于共享状态 (S) 的缓存中：<br><img src="https://upload-images.jianshu.io/upload_images/19950097-fe80dfa4f48583b0.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240"></p>
 </li>
